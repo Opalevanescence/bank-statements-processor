@@ -44,6 +44,12 @@ def main(csv_in: str = "charles_schwab_example.csv", csv_out: str = "categorized
     # Only keep relevant columns
     print(desired_columns)
     df = df[desired_columns]
+    # Remove dollar signs and commas, then convert to float
+    df["Withdrawal"] = (
+        df["Withdrawal"]
+        .replace("[\$,]", "", regex=True)  # remove $ and commas
+        .astype(float)
+    )
 
     # TODO: Delete rows where Description includes Transfer to Brokerage
 
@@ -69,6 +75,12 @@ def main(csv_in: str = "charles_schwab_example.csv", csv_out: str = "categorized
     # Write
     df.to_csv(csv_out, index=False)
     print(f"✔ Categorized file saved to {Path(csv_out).resolve()}")
+
+    # count_category_totals
+    df["Withdrawal"] = pd.to_numeric(df["Withdrawal"], errors="coerce")
+    category_totals = df.groupby("Category")["Withdrawal"].sum().reset_index()
+
+    print(category_totals)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

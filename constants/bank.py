@@ -1,11 +1,16 @@
 from enum import Enum
 
+class Bank (Enum):
+  """Banks we can process CSVs for."""
+  LLOYDS = 'lloyds'
+  SCHWAB = 'schwab'
+
 class SchwabColumns (Enum):
   """Column names of CSV file from Lloyds."""
-  DATE = "Date"
-  DESCRIPTION = "Description"
-  WITHDRAWAL = "Withdrawal"
-  DEPOSIT = "Deposit"
+  DATE = "date"
+  DESCRIPTION = "description"
+  WITHDRAWAL = "withdrawal"
+  DEPOSIT = "deposit"
 
 class LloydsColumns (Enum):
   """Column names of CSV file from Lloyds."""

@@ -1,0 +1,23 @@
+[project]
+name = "bank-statements-processor"
+version = "0.1.0"
+description = "Process csv files from banks"
+authors = [{ name = "Opalevanescence", email = "jessica.ashley.gray@gmail.com"}]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.116.1",
+    "pandas>=2.3.1",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "fastapi>=0.116.1",
+    "pandas>=2.3.1",
+    "psycopg2-binary>=2.9.10",
+    "uvicorn[standard]>=0.35.0",
+]
+
+[tool.uv.pip]
+python-version = "3.9"
+

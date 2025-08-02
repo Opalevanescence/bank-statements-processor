@@ -1,2 +1,7 @@
 __pycache__/
-constants/keywords.py
+.venv/
+
+.python-version
+uv.lock
+
+src/constants/keywords.py

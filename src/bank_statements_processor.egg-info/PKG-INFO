@@ -1,0 +1,25 @@
+Metadata-Version: 2.4
+Name: bank-statements-processor
+Version: 0.1.0
+Summary: Process csv files from banks
+Author-email: Opalevanescence <jessica.ashley.gray@gmail.com>
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+
+Categorize bank transactions.
+
+Usage:
+    python categorize_transactions.py <csv_in> [-o <csv_out>]
+
+The input CSV must contain at least these columns:
+    Date, Description, Withdrawal, Deposit
+
+
+## Setup
+
+```
+brew install uv
+
+# Create an environment
+uv venv
+```

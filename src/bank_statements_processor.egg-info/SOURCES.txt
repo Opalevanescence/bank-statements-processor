@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+src/main.py
+src/bank_statements_processor.egg-info/PKG-INFO
+src/bank_statements_processor.egg-info/SOURCES.txt
+src/bank_statements_processor.egg-info/dependency_links.txt
+src/bank_statements_processor.egg-info/top_level.txt
+src/constants/bank.py
+src/constants/keywords.example.py
+src/constants/keywords.py

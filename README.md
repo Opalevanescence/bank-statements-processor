@@ -1,10 +1,13 @@
-Categorize bank transactions.
+# Bank Statements Processor
 
-Usage:
-    python categorize_transactions.py <csv_in> [-o <csv_out>]
+This repository is used to categorize bank transactions.
 
-The input CSV must contain at least these columns:
-    Date, Description, Withdrawal, Deposit
+_Original Purpose_
+
+This repository is still in progress. The first iteration of the repository was intended to be used with `python categorize_transactions.py <csv_in> [-o <csv_out>]`.
+With the input CSV needing to contain at least these columns: Date, Description, Withdrawal, Deposit.
+
+Currently working on improving the repository to have a use REST endpoints, have a db, etc.
 
 
 ## Setup

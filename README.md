@@ -8,6 +8,13 @@ The input CSV must contain at least these columns:
 
 
 ## Setup
+Install Docker
+
+```
+docker compose up --build
+
+```
+
 
 ```
 brew install uv
@@ -25,4 +32,12 @@ uv add --dev <dependency>
 
 # run using script
 uv dev
+```
+
+# Create local PostgreSQL Instance
+
+```
+brew install postgresql
+brew services start postgresql
+createdb money-categories
 ```

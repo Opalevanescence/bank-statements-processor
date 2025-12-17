@@ -1,8 +1,21 @@
+<<<<<<< HEAD
 Bank Statements Processor API
 
 This repository provides a FastAPI service that ingests bank statement CSVs, categorizes transactions, stores them in PostgreSQL (Docker), allows correcting a transaction's category, and lets you query transactions by category.
 
 The input CSV for each bank must contain the expected bank-specific columns. See `constants/bank.py` for the enumerated columns per bank.
+=======
+# Bank Statements Processor
+
+This repository is used to categorize bank transactions.
+
+_Original Purpose_
+
+This repository is still in progress. The first iteration of the repository was intended to be used with `python categorize_transactions.py <csv_in> [-o <csv_out>]`.
+With the input CSV needing to contain at least these columns: Date, Description, Withdrawal, Deposit.
+
+Currently working on improving the repository to have a use REST endpoints, have a db, etc.
+>>>>>>> c7adda7e85f4a5f5002bbad3be05d71e8ad0e231
 
 Endpoints
 

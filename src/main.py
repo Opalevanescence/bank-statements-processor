@@ -1,6 +1,14 @@
 import argparse
 import os
 import re
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+# logger = logging.getLogger(__name__)
 
 from io import BytesIO
 import pandas as pd
@@ -108,22 +116,24 @@ async def upload_transactions(
     desired_columns = [column.value for column in columnsEnum]
     missing = [col for col in desired_columns if col not in df.columns]
     if missing:
-        raise HTTPException(status_code=422, detail=f"Missing required columns: {missing}")
+        raise HTTPException(status_code=422, detail=f"Missing required columns: {missing} in {df.columns}")
 
     # Categorise using vectorised apply.
     df = df[desired_columns].copy()
-    # Normalize amounts when present
+    # Normalize amounts: strip $ and commas, convert to numeric (empty strings become NaN)
     if columnsEnum.WITHDRAWAL.value in df.columns:
-        df[columnsEnum.WITHDRAWAL.value] = (
+        df[columnsEnum.WITHDRAWAL.value] = pd.to_numeric(
             df[columnsEnum.WITHDRAWAL.value]
-            .replace("[\$]", "", regex=True)
-            .astype(float)
+            .replace(r"[\$,]", "", regex=True)
+            .replace("", pd.NA),
+            errors="coerce"
         )
     if columnsEnum.DEPOSIT.value in df.columns:
-        df[columnsEnum.DEPOSIT.value] = (
+        df[columnsEnum.DEPOSIT.value] = pd.to_numeric(
             df[columnsEnum.DEPOSIT.value]
-            .replace("[\$]", "", regex=True)
-            .astype(float)
+            .replace(r"[\$,]", "", regex=True)
+            .replace("", pd.NA),
+            errors="coerce"
         )
     df[["category", "sub_category"]] = (
         df[columnsEnum.DESCRIPTION.value].apply(categorize).apply(pd.Series)
@@ -206,73 +216,72 @@ async def list_transactions_by_category(
 # --------------------------------------------------------------------
 # 2. Command‑line interface
 # --------------------------------------------------------------------
-def main(csv_in: str = "charles_schwab_example.csv", csv_out: str = "categorized.csv") -> None:
-    """Read the CSV, add Category column, and write a new CSV."""
-    print(f"Reading {csv_in}...")
-    df = pd.read_csv(csv_in)
+# def main(csv_in: str = "charles_schwab_example.csv", csv_out: str = "categorized.csv") -> None:
+#     """Read the CSV, add Category column, and write a new CSV."""
+#     df = pd.read_csv(csv_in)
 
-    # Guard against missing column
-    desired_columns = [column.value for column in SchwabColumns]
-    for col in desired_columns:
-        if col not in df.columns:
-            print('column not present')
-            raise ValueError(f"Input CSV must contain a '{col}' column")
-    # Only keep relevant columns
-    df = df[desired_columns]
-    # Remove dollar signs and commas, then convert to float
-    df["Withdrawal"] = (
-        df["Withdrawal"]
-        .replace("[\$,]", "", regex=True)  # remove $ and commas
-        .astype(float)
-    )
+#     # Guard against missing column
+#     desired_columns = [column.value for column in SchwabColumns]
+#     for col in desired_columns:
+#         if col not in df.columns:
+#             print('column not present')
+#             raise ValueError(f"Input CSV must contain a '{col}' column")
+#     # Only keep relevant columns
+#     df = df[desired_columns]
+#     # Remove dollar signs and commas, then convert to float
+#     df["Withdrawal"] = (
+#         df["Withdrawal"]
+#         .replace("[\$,]", "", regex=True)  # remove $ and commas
+#         .astype(float)
+#     )
 
-    # TODO: Delete rows where Description includes Transfer to Brokerage
+#     # TODO: Delete rows where Description includes Transfer to Brokerage
 
-    # Remove rows where Description is NaN
-    # TODOJ: Handle Deposits later
-    df = df.dropna(subset=["Withdrawal"])
-    # Handle deposits:
-    # VENMO
-    # "IRS  TREASURY",
-    # FRANCHISE TAX BD
-    # "Interest Paid"
-    # "Cuploop OU Tallin" - deposit
+#     # Remove rows where Description is NaN
+#     # TODOJ: Handle Deposits later
+#     df = df.dropna(subset=["Withdrawal"])
+#     # Handle deposits:
+#     # VENMO
+#     # "IRS  TREASURY",
+#     # FRANCHISE TAX BD
+#     # "Interest Paid"
+#     # "Cuploop OU Tallin" - deposit
 
-    # Categorize
-    print("Categorizing transactions...")
-    df[["Category", "SubCategory"]] = (
-        df["Description"]
-        .apply(categorize)
-        .apply(pd.Series) # turns tuples into two columns
-    )
-    df["Currency"] = Currency.GBP.value
+#     # Categorize
+#     print("Categorizing transactions...")
+#     df[["Category", "SubCategory"]] = (
+#         df["Description"]
+#         .apply(categorize)
+#         .apply(pd.Series) # turns tuples into two columns
+#     )
+#     df["Currency"] = Currency.GBP.value
 
-    # Write
-    df.to_csv(csv_out, index=False)
-    print(f"✔ Categorized file saved to {Path(csv_out).resolve()}")
+#     # Write
+#     df.to_csv(csv_out, index=False)
+#     print(f"✔ Categorized file saved to {Path(csv_out).resolve()}")
 
-    # count_category_totals
-    df["Withdrawal"] = pd.to_numeric(df["Withdrawal"], errors="coerce")
-    category_totals = df.groupby("Category")["Withdrawal"].sum().reset_index()
+#     # count_category_totals
+#     df["Withdrawal"] = pd.to_numeric(df["Withdrawal"], errors="coerce")
+#     category_totals = df.groupby("Category")["Withdrawal"].sum().reset_index()
 
-    print(category_totals)
+#     print(category_totals)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Add a Category column to a transaction CSV"
-    )
-    parser.add_argument(
-        "-i",
-        "--csv_in",
-        default="bank_csvs/charles_schwab_example.csv",
-        help="Path to the input CSV file (default: bank_csvscharles_schwab_example.csv)"
-    )
-    parser.add_argument(
-        "-o",
-        "--csv_out",
-        default="~/Downloads/categorized.csv",
-        help="Output CSV path (default: ~/Downloads/categorized.csv)",
-    )
-    args = parser.parse_args()
-    print(args)
-    main(args.csv_in, args.csv_out)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(
+#         description="Add a Category column to a transaction CSV"
+#     )
+#     parser.add_argument(
+#         "-i",
+#         "--csv_in",
+#         default="bank_csvs/charles_schwab_example.csv",
+#         help="Path to the input CSV file (default: bank_csvscharles_schwab_example.csv)"
+#     )
+#     parser.add_argument(
+#         "-o",
+#         "--csv_out",
+#         default="~/Downloads/categorized.csv",
+#         help="Output CSV path (default: ~/Downloads/categorized.csv)",
+#     )
+#     args = parser.parse_args()
+#     print(args)
+#     main(args.csv_in, args.csv_out)

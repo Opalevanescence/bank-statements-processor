@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-Bank Statements Processor API
-
-This repository provides a FastAPI service that ingests bank statement CSVs, categorizes transactions, stores them in PostgreSQL (Docker), allows correcting a transaction's category, and lets you query transactions by category.
-
-The input CSV for each bank must contain the expected bank-specific columns. See `constants/bank.py` for the enumerated columns per bank.
-=======
 # Bank Statements Processor
 
 This repository is used to categorize bank transactions.
@@ -15,13 +8,15 @@ This repository is still in progress. The first iteration of the repository was 
 With the input CSV needing to contain at least these columns: Date, Description, Withdrawal, Deposit.
 
 Currently working on improving the repository to have a use REST endpoints, have a db, etc.
->>>>>>> c7adda7e85f4a5f5002bbad3be05d71e8ad0e231
 
 Endpoints
 
 - POST `/transactions`: Upload a CSV and specify the bank; rows are categorized and saved.
 - PATCH `/transactions/{id}/category`: Update `category` and/or `sub_category` for one transaction.
-- GET `/transactions?category=...`: List all transactions for a given category.
+- GET `/transactions`: List transactions filtered by optional query params:
+  `category`, `sub_category`, `start_date`, `end_date`. If no params are passed, all transactions are returned.
+- GET `/transactions/summary`: Summarize totals by category and sub-category for an optional date range.
+- DELETE `/transactions/{id}`: Delete a transaction.
 
 Prerequisites
 
@@ -30,10 +25,10 @@ Prerequisites
 
 ## Setup Instructions
 
-### 1) Start PostgreSQL with Docker
+### 1) Start PostgreSQL and Metabase with Docker
 
 ```bash
-docker compose up -d db
+docker compose up -d db metabase
 ```
 
 Wait for the database to be healthy (usually takes 5-10 seconds). Verify with:
@@ -43,6 +38,16 @@ docker compose ps
 ```
 
 The database will be available on `localhost:5432` with database `money_categories`, user `postgres`, password `postgres`.
+
+**Metabase** will be available at `http://localhost:3000`. On first visit, complete the setup wizard, then add the database:
+
+- **Admin** → **Databases** → **Add database**
+- **Database type:** PostgreSQL
+- **Host:** `db` (use this when Metabase runs via Docker Compose; it resolves to the Postgres container)
+- **Port:** `5432`
+- **Database name:** `money_categories`
+- **Username:** `postgres`
+- **Password:** `postgres`
 
 **Note:** If you encounter a "database does not exist" error, create it manually:
 
@@ -87,18 +92,28 @@ uvicorn src.main:app --reload
 
 The API will be available at `http://127.0.0.1:8000` and interactive documentation at `http://127.0.0.1:8000/docs`.
 
-On startup, the service ensures the `transactions` table exists with schema:
+On startup, the service ensures the database tables exist with schema:
 
 ```
-id SERIAL PK,
-date DATE,
-description TEXT,
-withdrawal NUMERIC,
-deposit NUMERIC,
-category TEXT,
-sub_category TEXT,
-currency TEXT,
-bank TEXT
+banks:
+  id SERIAL PK,
+  name TEXT UNIQUE,
+  currency TEXT
+
+categories:
+  id SERIAL PK,
+  sub_category TEXT,
+  category TEXT,
+  UNIQUE (category, sub_category)
+
+transactions:
+  id SERIAL PK,
+  date DATE,
+  description TEXT,
+  withdrawal NUMERIC,
+  deposit NUMERIC,
+  sub_category_id INTEGER,
+  bank_id INTEGER
 ```
 
 Usage Examples
@@ -127,6 +142,24 @@ curl -X PATCH \
 curl "http://127.0.0.1:8000/transactions?category=Food"
 ```
 
+- Get transactions in a date range:
+
+```
+curl "http://127.0.0.1:8000/transactions?start_date=2024-01-01&end_date=2024-01-31"
+```
+
+- Get a summary by category/sub-category:
+
+```
+curl "http://127.0.0.1:8000/transactions/summary?start_date=2024-01-01&end_date=2024-01-31"
+```
+
+- Delete a transaction:
+
+```
+curl -X DELETE "http://127.0.0.1:8000/transactions/123"
+```
+
 ## Troubleshooting
 
 **"ModuleNotFoundError: No module named 'constants'"**
@@ -134,12 +167,14 @@ curl "http://127.0.0.1:8000/transactions?category=Food"
 - Ensure `src/__init__.py` and `src/constants/__init__.py` exist (they should be created automatically)
 
 **"Address already in use" error on port 8000**
-- Stop any existing uvicorn processes: `pkill -f "uvicorn src.main:app"`
+- Stop any existing server processes: `pkill -f "uvicorn src.main:app"`
 - Or stop the Docker app container: `docker compose stop app`
 
 **"Database does not exist" error**
 - Ensure the database container is running: `docker compose ps`
 - Create the database manually if needed: `docker compose exec db psql -U postgres -d postgres -c "CREATE DATABASE money_categories;"`
+- If you changed schemas, reset the DB:
+  `docker compose down -v && docker compose up -d db`
 
 **Import errors**
 - Make sure your virtual environment is activated: `source .venv/bin/activate`
@@ -149,4 +184,6 @@ curl "http://127.0.0.1:8000/transactions?category=Food"
 
 - The API normalizes amounts, strips currency symbols, and categorizes each row using the keyword maps in `constants/keywords.py`.
 - If your CSV schema differs, adapt the `constants/bank.py` enums for `DATE`, `DESCRIPTION`, `WITHDRAWAL`, and `DEPOSIT`.
-- The `transactions` table is automatically created on API startup if it doesn't exist.
+- Schwab CSV dates are parsed as `MM/DD/YYYY`; Lloyds dates are parsed as `DD/MM/YYYY`.
+- The database tables are automatically created on API startup if they don't exist.
+- In the docs UI, `bank`, `category`, and `sub_category` are restricted to known values via drop-downs.

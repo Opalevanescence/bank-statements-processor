@@ -37,8 +37,23 @@ services:
     networks:
       - money_net
 
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase_data:/metabase-data
+    networks:
+      - money_net
+
 volumes:
   postgres_data:
+  metabase_data:
 
 networks:
   money_net:

@@ -4,4 +4,6 @@ __pycache__/
 .python-version
 uv.lock
 
+src/bank_csvs/
+
 src/constants/keywords.py
